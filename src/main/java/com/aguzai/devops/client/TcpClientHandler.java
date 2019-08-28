@@ -30,4 +30,10 @@ public class TcpClientHandler extends SimpleChannelInboundHandler<BaseMessage> {
             e.printStackTrace();
         }
     }
+
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {        // TODO Auto-generated method stub
+        super.handlerRemoved(ctx);
+        this.listener.onConnectionClosed(ctx);
+    }
+
 }

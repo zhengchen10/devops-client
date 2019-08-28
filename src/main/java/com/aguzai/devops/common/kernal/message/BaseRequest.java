@@ -11,11 +11,21 @@ public abstract class BaseRequest extends BaseMessage{
   }
   private short requestSeq;
 
+  public String getAttachment() {
+    return attachment;
+  }
+
   public short getRequestSeq() {
     return requestSeq;
+  }
+
+  public void setAttachment(String attachment) {
+    this.attachment = attachment;
   }
 
   public void setRequestSeq(short requestSeq) {
     this.requestSeq = requestSeq;
   }
+
+  private String attachment = null;
 }

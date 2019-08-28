@@ -8,5 +8,6 @@ import io.netty.channel.ChannelHandlerContext;
  * Created by zhengchen on 2016/12/20.
  */
 public interface IClientListener {
-    public void onReceiveMessage(ChannelHandlerContext context, BaseMessage message);
+    void onReceiveMessage(ChannelHandlerContext context, BaseMessage message);
+    void onConnectionClosed(ChannelHandlerContext context);
 }
