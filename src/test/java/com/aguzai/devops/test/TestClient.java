@@ -2,6 +2,7 @@ package com.aguzai.devops.test;
 
 import com.aguzai.devops.client.AgentClient;
 import com.aguzai.devops.client.IClientListener;
+import com.aguzai.devops.client.IProgressListener;
 import com.aguzai.devops.common.kernal.Global;
 import com.aguzai.devops.common.kernal.message.BaseMessage;
 import com.aguzai.devops.common.kernal.message.BaseResponse;
@@ -17,8 +18,12 @@ public class TestClient {
     Global.registerMessageClass(10001,1,2, JStatResponse.class);
     Global.registerMessageClass(10002,1,1,UploadRequest.class);
     Global.registerMessageClass(10002,1,2, UploadResponse.class);
-    Global.registerMessageClass(10003,1,1,UploadPackage.class);
-    Global.registerMessageClass(10003,1,2, UploadPackageResult.class);
+    Global.registerMessageClass(10003,1,1,UploadPackageRequest.class);
+    Global.registerMessageClass(10003,1,2, UploadPackageResponse.class);
+    Global.registerMessageClass(10004,1,1,DownloadRequest.class);
+    Global.registerMessageClass(10004,1,2, DownloadResponse.class);
+    Global.registerMessageClass(10005,1,1,DownloadPackageRequest.class);
+    Global.registerMessageClass(10005,1,2, DownloadPackageResponse.class);
    // AgentClient client = new AgentClient("192.168.6.107",9080);
     AgentClient client = new AgentClient("127.0.0.1",9080);
     client.start();
@@ -32,7 +37,26 @@ public class TestClient {
     u.setFileName("nexus-2.14.5-02-bundle.zip");
     u.setFileVersion("1.0");
     u.setGroup("test");
-    client.uploadFile(u);
+    /*client.uploadFile(u, new IProgressListener() {
+      public void onProgress(int s) {
+        if(s == 99){
+          System.out.println("send :"+ s +"%" );
+        }else {
+          System.out.println("send :"+ s +"%" );
+        }
+      }
+    });*/
+    DownloadRequest d = new DownloadRequest();
+    d.setFileName("nexus-2.14.5-02-bundle.zip");
+    d.setGroup("test");
+    d.setCompress(false);
+    d.setSavePath("D:\\upload\\download\\");
+    d.setStart(0);
+    client.downloadFile(d, new IProgressListener() {
+      public void onProgress(int s) {
+        System.out.println("send :"+ s +"%" );
+      }
+    });
     /*client.sendAsyncMessage(u, new IClientListener() {
       public void onReceiveMessage(ChannelHandlerContext context, BaseMessage message) {
 

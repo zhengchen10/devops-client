@@ -8,10 +8,7 @@ import com.aguzai.devops.common.kernal.message.BaseMessage;
 import com.aguzai.devops.common.kernal.message.BaseRequest;
 import com.aguzai.devops.common.kernal.message.BaseResponse;
 import com.aguzai.devops.common.kernal.message.MessageWithAttachment;
-import com.aguzai.devops.protocols.UploadPackage;
-import com.aguzai.devops.protocols.UploadPackageResult;
-import com.aguzai.devops.protocols.UploadRequest;
-import com.aguzai.devops.protocols.UploadResponse;
+import com.aguzai.devops.protocols.*;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -105,15 +102,12 @@ public class AgentClient {
             e.printStackTrace();
         }
     }
-    public void uploadFile(final UploadRequest m){
-
+    public void uploadFile(final UploadRequest m, final IProgressListener plistener){
         try {
             final RandomAccessFile file =new RandomAccessFile(m.getAttachment(), "r");
 
-            //final FileInputStream fileStream = new FileInputStream(m.getAttachment());
             final int packageLength = 819200;
             final byte[] buffer = new byte[packageLength];
-            //File file = new File(m.getAttachment());
             final long fileLength = file.length();
             final int start = m.getStart();
             m.setFileLength((int)fileLength);
@@ -125,13 +119,14 @@ public class AgentClient {
                         public void run() {
                             boolean failed =false;
                             long i = start;
+
                             for(;i<fileLength;i+=packageLength){
                                 try {
                                     long length = Math.min(packageLength,fileLength - i);
                                     file.seek(i);
                                     file.read(buffer,0,(int)length);
 
-                                    UploadPackage up = new UploadPackage();
+                                    UploadPackageRequest up = new UploadPackageRequest();
                                     up.setDatas(buffer);
                                     up.setStart((int)i);
                                     up.setTaskId(taskId);
@@ -150,18 +145,25 @@ public class AgentClient {
                                     }
                                     e.printStackTrace();
                                 }
+                                if(plistener != null)
+                                    plistener.onProgress((int)(i*1.0/fileLength*100));
                             }
                             AgentClient.this.channel.close();
+                            try {
+                                file.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                             if(failed){
                                 AgentClient.this.start();
-                                UploadRequest req = new UploadRequest();
-                                req.setFileName(m.getFileName());
-                                req.setFileVersion(m.getFileVersion());
-                                req.setAttachment(m.getAttachment());
-                                req.setGroup(m.getGroup());
+                                UploadRequest req = new UploadRequest(m);
                                 req.setStart((int)i);
-                                req.setFileLength(m.getFileLength());
-                                AgentClient.this.uploadFile(req);
+                                AgentClient.this.uploadFile(req,plistener);
+                            }
+                            if(i >= fileLength)
+                            {
+                                if(plistener != null)
+                                    plistener.onProgress(100);
                             }
                         }
                     }).start();
@@ -178,12 +180,102 @@ public class AgentClient {
         } catch (  IOException e){
             e.printStackTrace();
         }
+    }
+    public void uploadFile(UploadRequest m){
+        uploadFile(m,null);
+    }
 
-        /*try {
-            channel.writeAndFlush(new MessageWithAttachment(m,m.getAttachment())).sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
+    public void downloadFile(final DownloadRequest d, final IProgressListener plistener){
+        IClientListener downloadListener = new IClientListener() {
+            public void onReceiveMessage(ChannelHandlerContext context, BaseMessage message) {
+                try {
+                    DownloadResponse dm = (DownloadResponse) message;
+                    final int packageLength = 819200;
+                    final byte[] buffer = new byte[packageLength];
+                    String filePath = d.getSavePath() + dm.getFilename();
+                    //final RandomAccessFile file =new RandomAccessFile(, "r");
+                    final String taskId = ((DownloadResponse) message).getTaskId();
+                    final int fileLength = ((DownloadResponse) message).getFileLength();
+                    final int start = ((DownloadResponse) message).getStart();
+
+                    if (start == 0) {
+                        File file = new File(filePath);
+                        if (file.exists())
+                            file.delete();
+                    }
+                    final RandomAccessFile writeFile = new RandomAccessFile(filePath, "rw");
+                    new Thread(new Runnable() {
+                        public void run() {
+                            boolean failed = false;
+                            long i = start;
+
+                            for (; i < fileLength; i += packageLength) {
+                                try {
+                                    DownloadPackageRequest dp = new DownloadPackageRequest();
+                                    dp.setTaskId(taskId);
+                                    dp.setStart((int)i);
+                                    if(i + packageLength <fileLength)
+                                        dp.setLength(packageLength);
+                                    else
+                                        dp.setLength(fileLength - (int)i);
+
+                                    BaseResponse result = AgentClient.this.sendSyncMessage(dp);
+                                    if(result == null){
+                                        failed = true;
+                                        break;
+                                    }
+                                    DownloadPackageResponse data = (DownloadPackageResponse)result;
+                                    writeFile.seek(data.getStart());
+                                    writeFile.write(data.getData(),0,data.getLength());
+                                    int pos = (int)i ;
+                                    if (plistener != null)
+                                        plistener.onProgress((int) ((pos * 1.0 / fileLength * 100)));
+                                    if(pos == fileLength){
+                                        break;
+                                    }
+
+                                } catch (Exception e) {
+                                    if (e instanceof ClosedChannelException) {
+                                        listener.onConnectionClosed(null);
+                                        failed = true;
+                                        break;
+                                    }
+                                    e.printStackTrace();
+                                }
+                                if (plistener != null)
+                                    plistener.onProgress((int) (i * 1.0 / fileLength * 100));
+                            }
+                            AgentClient.this.channel.close();
+                            try {
+                                writeFile.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            if (failed) {
+                                AgentClient.this.start();
+                                DownloadRequest req = new DownloadRequest(d);
+                                req.setStart((int) i);
+                                AgentClient.this.downloadFile(req, plistener);
+                            }
+                            if (i >= fileLength) {
+                                if (plistener != null)
+                                    plistener.onProgress(100);
+                            }
+                        }
+                    }).start();
+                } catch (Exception e){
+
+                }
+            }
+
+            public void onConnectionClosed(ChannelHandlerContext context) {
+
+            }
+        };
+        sendAsyncMessage(d,downloadListener);
+    }
+    public void downloadFile(DownloadRequest d){
+        downloadFile(d,null);
     }
     public BaseResponse sendSyncMessage(BaseRequest request) {
         short req = BaseRequest.newRequestSeq();

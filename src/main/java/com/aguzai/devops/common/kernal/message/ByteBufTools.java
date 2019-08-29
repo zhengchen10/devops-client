@@ -336,6 +336,12 @@ public class ByteBufTools {
         return resp;
     }
 
+    public static byte[] readBytes(ByteBuf out,int length){
+        byte[] ret = new byte[length];
+        out.getBytes(out.readerIndex(),ret,0,length);
+        return ret;
+    }
+
     public static void writeBytes(ByteBuf out, byte[] buffer, int offset, int length) {
         out.writeBytes(buffer,offset,length);
     }

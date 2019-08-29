@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.Random;
 
-public abstract class BaseRequest extends BaseMessage{
+public class BaseRequest extends BaseMessage{
   private static Random random = new Random();
   public static short newRequestSeq(){
     return (short)random.nextInt();
@@ -28,4 +28,11 @@ public abstract class BaseRequest extends BaseMessage{
   }
 
   private String attachment = null;
+
+  public void fromBytes(ByteBuf byteBuf, short messageId, short version) {
+
+  }
+  public void toBytes(ByteBuf resp) {
+
+  }
 }

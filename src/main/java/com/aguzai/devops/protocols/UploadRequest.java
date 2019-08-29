@@ -15,6 +15,17 @@ public class UploadRequest extends BaseRequest {
     super.setMessageId(MessageConst.UPLOAD_FILE_REQUEST);
     super.setVersion((short)1);
   }
+  public UploadRequest(UploadRequest u){
+    this();
+    this.attachment = u.attachment;
+    this.fileVersion = u.fileVersion;
+    this.group = u.group;
+    this.fileName = u.fileName;
+    this.fileLength = u.fileLength;
+    this.start = u.start;
+
+  }
+
   public void fromBytes(ByteBuf byteBuf, short messageId, short version) {
 
   }

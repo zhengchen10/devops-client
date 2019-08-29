@@ -11,9 +11,6 @@ public class JStatRequest extends BaseRequest {
     super.setMessageId(MessageConst.JSTAT_REQUEST);
     super.setVersion((short)1);
   }
-  public void fromBytes(ByteBuf byteBuf, short messageId, short version) {
-
-  }
 
   public String getPid() {
     return pid;

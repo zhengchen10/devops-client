@@ -4,21 +4,13 @@ import com.aguzai.devops.common.kernal.message.BaseRequest;
 import com.aguzai.devops.common.kernal.message.ByteBufTools;
 import io.netty.buffer.ByteBuf;
 
-public class UploadPackage extends BaseRequest {
+public class DownloadPackageRequest extends BaseRequest {
   private String taskId;
-  private byte[] datas;
   private int start;
   private int length;
-  public UploadPackage(){
-    super.setMessageId(MessageConst.UPLOAD_FILE_PACKAGE);
+  public DownloadPackageRequest(){
+    super.setMessageId(MessageConst.DOWNLOAD_PACKAGE_REQUEST);
     super.setVersion((short)1);
-  }
-  public void fromBytes(ByteBuf byteBuf, short messageId, short version) {
-
-  }
-
-  public byte[] getDatas() {
-    return datas;
   }
 
   public int getLength() {
@@ -31,10 +23,6 @@ public class UploadPackage extends BaseRequest {
 
   public String getTaskId() {
     return taskId;
-  }
-
-  public void setDatas(byte[] datas) {
-    this.datas = datas;
   }
 
   public void setLength(int length) {
@@ -53,6 +41,5 @@ public class UploadPackage extends BaseRequest {
     ByteBufTools.writeString(resp,taskId);
     ByteBufTools.writeInteger(resp,start);
     ByteBufTools.writeInteger(resp,length);
-    ByteBufTools.writeBytes(resp,datas,0,length);
   }
 }

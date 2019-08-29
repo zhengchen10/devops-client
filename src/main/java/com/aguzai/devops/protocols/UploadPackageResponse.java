@@ -4,7 +4,7 @@ import com.aguzai.devops.common.kernal.message.BaseResponse;
 import com.aguzai.devops.common.kernal.message.ByteBufTools;
 import io.netty.buffer.ByteBuf;
 
-public class UploadPackageResult extends BaseResponse {
+public class UploadPackageResponse extends BaseResponse {
   private String taskId;
 
   private Integer start;
